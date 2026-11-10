@@ -16,7 +16,11 @@ r2r/
 *~
 *.orig
 *.rej
-mekkogx/__pycache__/
+__pycache__/
 
 # host test harness binary
 support/host/fujirkle-host
+
+# charset generator binaries and intermediates; apple2's charset is a build input
+support/*/gen/gencharset
+support/coco/gen/charset
