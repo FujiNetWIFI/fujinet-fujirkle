@@ -1,7 +1,12 @@
 #ifndef MISC_H
 #define MISC_H
 
-#ifndef __WATCOMC__
+#if defined(__ADAM__)
+/* z88dk's cgetc() is a dead stub on the Adam; these run over EOS (adam/input.c).
+ * Unsigned because Adam key codes reach 0xA8 and sccz80 chars are signed. */
+unsigned char kbhit(void);
+unsigned char cgetc(void);
+#elif !defined(__WATCOMC__)
 #include <joystick.h>
 #include <conio.h>
 #endif
