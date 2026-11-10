@@ -4,6 +4,7 @@ PLATFORMS += adam
 PLATFORMS += apple2
 PLATFORMS += atari
 PLATFORMS += coco
+PLATFORMS += model2
 PLATFORMS += msdos
 
 # CoCo targets:
@@ -26,6 +27,18 @@ FUJINET_LIB = https://github.com/FujiNetWIFI/fujinet-lib.git
 
 # Adam (z88dk): -m keeps the map file, for finding what filled RAM on an overflow
 LDFLAGS_EXTRA_ADAM = -m
+
+# TRS-80 Model II (z88dk +cpm, Pickles & Trout CP/M). No stdio: the game
+# drives the console itself (src/model2/console.c). CRT_TRIM_BSS keeps BSS out
+# of the .com, so less loads over the bus.
+CFLAGS_EXTRA_MODEL2 = -O3 -DCUSTOM_FUJINET_CALLS
+LDFLAGS_EXTRA_MODEL2 = -m \
+  -pragma-define:CRT_ENABLE_STDIO=0 \
+  -pragma-define:CLIB_FOPEN_MAX=0 \
+  -pragma-define:CLIB_OPEN_MAX=0 \
+  -pragma-define:CLIB_EXIT_STACK_SIZE=0 \
+  -pragma-define:CRT_ENABLE_COMMANDLINE=0 \
+  -pragma-define:CRT_TRIM_BSS=1
 
 # Apple II: custom HGR-aware linker config
 LDFLAGS_EXTRA_APPLE2 += -C src/apple2/apple2-hgr.cfg

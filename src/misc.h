@@ -6,6 +6,10 @@
  * Unsigned because Adam key codes reach 0xA8 and sccz80 chars are signed. */
 unsigned char kbhit(void);
 unsigned char cgetc(void);
+#elif defined(__TRS80M2__)
+// Raw BIOS console reads (model2/input.c), so BREAK reaches the game
+unsigned char kbhit(void);
+unsigned char cgetc(void);
 #elif !defined(__WATCOMC__)
 #include <joystick.h>
 #include <conio.h>
