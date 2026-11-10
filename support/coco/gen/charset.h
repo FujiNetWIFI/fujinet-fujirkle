@@ -1029,7 +1029,41 @@ const char charset[]=
 	"        "
 	"**      "
 	"        "
-	
+
+	/* 0x5E-0x60 "bank" button face: dark letters punched out of the white
+	   face, built like the "roll" face at 0x0E-0x10, with 2px strokes so
+	   PMODE 4 does not artifact-color the edges. */
+
+	/* 0x5E Bank button, left */
+	"*    ***"
+	"*  *  **"
+	"*  *  **"
+	"*    ***"
+	"*  *  **"
+	"*  *  * "
+	"*    ***"
+	"********"
+
+	/* 0x5F Bank button, middle */
+	"********"
+	"********"
+	"   **   "
+	"**  *  *"
+	"    *  *"
+	" *  *  *"
+	"    *  *"
+	"********"
+
+	/* 0x60 Bank button, right */
+	"***  ***"
+	"***  ***"
+	" **  *  "
+	"  *  * *"
+	"  *    *"
+	"  *  * *"
+	"  *  *  "
+	"********"
+
 ;
 
 #endif /* CHARSET_H */
