@@ -1,6 +1,6 @@
 # Fujirkle
 
-Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, Apple II, and Intellivision.
+Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, Apple II, Coleco Adam, and Intellivision.
 
 ## Features
 
@@ -18,6 +18,7 @@ Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX re
 | MS-DOS | 40x25 | `r2r/msdos/fujirkle.img` |
 | Atari 8-bit | 40x26 | `r2r/atari/fujirkle.atr` |
 | Apple II | 40x24 | `r2r/apple2/fujirkle.po` |
+| Coleco Adam | 32x24 | `r2r/adam/fujirkle.ddp` |
 | Intellivision | 20x12 | `intv/fujirkle.rom` |
 
 The game board uses one of two layouts, chosen by screen width rather than by
@@ -30,6 +31,7 @@ get a tighter strip with vertical button words.
 - `cmoc` and `decb` for CoCo
 - Open Watcom (`wcc`) and `mtools` for MS-DOS
 - `cl65` (cc65) for Atari and Apple II
+- z88dk (`zcc`) for Coleco Adam
 - IntyBASIC and `as1600` for Intellivision
 - `git`: the build clones and builds `fujinet-lib`
 
@@ -43,6 +45,7 @@ make coco-dist
 make msdos
 make atari
 make apple2
+make adam
 make -C intv
 ```
 

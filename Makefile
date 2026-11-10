@@ -1,5 +1,6 @@
 PRODUCT = fujirkle
 PRODUCT_UPPER = FUJIRKLE
+PLATFORMS += adam
 PLATFORMS += apple2
 PLATFORMS += atari
 PLATFORMS += coco
@@ -22,6 +23,9 @@ INCLUDE_DIRS = src/platform-specific
 EXTRA_INCLUDE_COCO = src/include
 
 FUJINET_LIB = https://github.com/FujiNetWIFI/fujinet-lib.git
+
+# Adam (z88dk): -m keeps the map file, for finding what filled RAM on an overflow
+LDFLAGS_EXTRA_ADAM = -m
 
 # Apple II: custom HGR-aware linker config
 LDFLAGS_EXTRA_APPLE2 += -C src/apple2/apple2-hgr.cfg
