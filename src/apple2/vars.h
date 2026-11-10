@@ -8,7 +8,7 @@
 #define WIDTH 40
 #define HEIGHT 24
 
-// Other platform specific constnats
+// Other platform specific constants
 
 // 24 rows, the shortest 40 column screen. The panel gives up its blank row so
 // two rows still clear beneath the box, as on the others.
@@ -22,9 +22,7 @@
 
 #define ROLL_SOUND_MOD 1 // How often to play roll sound
 #define ROLL_FRAMES 10 // How many roll frames to play
-//#define SCORE_CURSOR_ALT 2 // Alternate score cursor color
 #define BOTTOM_HEIGHT 3 // How high the bottom panel is
-#define SCORES_X 10 // X start of scoreboard
 #define GAMEOVER_PROMPT_Y HEIGHT-3
 
 #define COLOR_TOGGLE // Rather than multiple colors, platform only supports toggling color mode on/off

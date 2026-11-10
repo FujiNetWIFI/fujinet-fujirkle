@@ -5,17 +5,10 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#define PARTIAL_LEFT 1
-#define PARTIAL_RIGHT 2
-#define FULL_CARD 3
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "../misc.h"
 
-
-extern uint8_t scoreY[];
-extern char* scores[];
 
 // Call to clear the screen, passing true to preserve borders
 void resetScreen(bool forBorderScreen);
@@ -23,16 +16,14 @@ void resetScreen(bool forBorderScreen);
 void drawText(unsigned char x, unsigned char y, char* s);
 void drawTextAlt(unsigned char x, unsigned char y, char* s);
 
-void clearBelowBoard();
-
 void drawChar(unsigned char x, unsigned char y, char c, unsigned char alt);
 
 void drawIcon(unsigned char x, unsigned char y, unsigned char icon);
 
-void drawGameName(unsigned char x, unsigned char y);
+// s is a die face 1-6 or one of these buttons
+enum { DIE_BANK = 13, DIE_ROLL };
 void drawDie(unsigned char x, unsigned char y, unsigned char s, bool isSelected, bool isHighlighted);
 
-void drawClock(unsigned char x, unsigned char y);
 void drawConnectionIcon(unsigned char x, unsigned char y);
 void drawBlank(unsigned char x, unsigned char y);
 void drawSpace(unsigned char x, unsigned char y, unsigned char w);
@@ -47,19 +38,13 @@ void drawBoxDivider(unsigned char x, unsigned char y, unsigned char h);
 // Heavier divider spanning columns x-1 and x, for a box's major split. Widths a
 // single cell cannot express are what let the compartments come out even.
 void drawBoxDividerWide(unsigned char x, unsigned char y, unsigned char h);
-void drawBorder();
-void drawBoard();
 void drawDiceCursor(unsigned char x);
 void hideDiceCursor(unsigned char x);
-// Forget any saved cursor backing store without painting it back.
-void cancelDiceCursor();
 
 // Call to save screen buffer for later restore. Returns false
 // if screen buffer not supported
 bool saveScreenBuffer();
 void restoreScreenBuffer();
-
-void setHighlight(int8_t player, bool isThisPlayer, uint8_t flash );
 
 void initGraphics();
 void resetGraphics();

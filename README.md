@@ -1,12 +1,11 @@
 # Fujirkle
 
-Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, and Apple II.
+Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, Apple II, and Intellivision.
 
 ## Features
 
-- FujiNet lobby support for player tables, ready state, and game joins
-- Lobby username and server endpoint persistence using FujiNet appkeys
-- Local server debug mode via appkey preferences
+- Launches from the FujiNet lobby into a table, or picks one itself
+- Lobby username and last table kept in FujiNet appkeys
 - Up to four local players sharing one system
 - The same tune set on every platform, matched to the CoCo 3 reference
 
@@ -32,10 +31,7 @@ get a tighter strip with vertical button words.
 - Open Watcom (`wcc`) and `mtools` for MS-DOS
 - `cl65` (cc65) for Atari and Apple II
 - IntyBASIC and `as1600` for Intellivision
-- A compatible FujiNet library for the target platform (`fujinet-lib`)
-
-MS-DOS builds against `fujinet-lib-experimental`, which carries the RS-232
-support not yet in the stable release.
+- `git`: the build clones and builds `fujinet-lib`
 
 ## Build commands
 
@@ -60,18 +56,12 @@ Boot the generated disk image on the target system. The combined CoCo disk
 contains a loader that auto-detects the model and runs the correct binary. The
 MS-DOS image carries an `AUTOEXEC.BAT` that launches the game.
 
-## Fujinet behavior
-
-- Default server endpoint: `https://fujirkle.carr-designs.com/`
-- Lobby server and username data are stored using FujiNet appkeys
-- Lobby support uses the registered FujiNet lobby app key for table selection
-- If the debug appkey flag is `0xFF`, the client uses `http://127.0.0.1:8080/` for local server testing
-
 ## Local development
 
-The local development endpoint is controlled by preferences stored in FujiNet appkeys. The client switches to the local server when a special debug flag is set in prefs.
-
-A local server can be started from the related server repository with:
+The client uses `https://fujirkle.carr-designs.com/` unless the lobby supplies a
+server. Setting the debug flag in its prefs appkey to `0xFF` switches it to
+`http://127.0.0.1:8080/`, where a local server can be started from the server
+repository:
 
 ```sh
 cd ~/servers/fujinet-game-system/fujirkle/server

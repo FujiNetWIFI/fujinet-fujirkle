@@ -28,7 +28,7 @@ const unsigned char paletteRGB[16] = {
     27,  // 3  cyan
     52,  // 4  gold (grid lines)
     36,  // 5  red (highlight)
-    10,  // 6  dark blue-green (highlighted column background)
+    10,  // 6  dark blue-green
     56,  // 7  light gray
      4,  // 8  dark red
     11,  // 9  light blue
@@ -48,7 +48,7 @@ const unsigned char paletteComposite[16] = {
     62,  // 3  cyan
     21,  // 4  gold (grid lines)
     23,  // 5  red (highlight)
-    14,  // 6  dark blue-green (hilite column bg) (guess)
+    14,  // 6  dark blue-green (guess)
     32,  // 7  light gray
      7,  // 8  dark red
     28,  // 9  light blue
@@ -69,7 +69,7 @@ const unsigned char text_palettes[PAL_COUNT][4] = {
     /* PAL_DIM    */ { 2, 4, 0, 7 },  // fg gray
 };
 
-#define BG_FILL         0x22  // packed 4bpp byte: both pixels = COL_BG (COL_BG/COL_BG_HILITE in hires.h)
+#define BG_FILL         0x22  // packed 4bpp byte: both pixels = palette slot 2, the table background
 
 // The 32K screen lives in MMU blocks 52-55, swapped in at $8000 by task 1.
 // Blocks 56-59 are the program's low half, present in both tasks.
@@ -80,11 +80,6 @@ static const unsigned char task1MMUBlocks[8] = {
 
 static unsigned char paletteBackup[16];
 static uint16_t oldGime;
-static int8_t highlightX = -1;
-
-// First cell of the active score column (or -1). Read by hires.c to keep
-// the highlight intact as score values are redrawn over it.
-int8_t hiliteCol = -1;
 
 unsigned char colorMode = 0;
 
@@ -107,19 +102,10 @@ static const unsigned char diceChars[] = {
     0x26,0x4C,0x27, 0x20,0x25,0x20, 0x28,0x4D,0x29,
     0x26,0x4C,0x27, 0x2A,0x20,0x2B, 0x28,0x4D,0x29,
 
-    /* 13 - empty space */
-    0x00,0x00,0x00, 0x00,0x00,0x00, 0x00,0x00,0x00,
-
-    /* 14-16 - "Roll" button: 1 left / 2 left / cannot roll */
-    0x41,0x40,0x42, 0x2C,0x2D,0x2E, 0x43,0x30,0x44,
-    0x41,0x40,0x42, 0x2C,0x2D,0x2E, 0x43,0x2F,0x44,
-    0x41,0x40,0x42, 0x2C,0x2D,0x2E, 0x43,0x50,0x44,
-
-    /* 17 - "Bank" button. Same corners as a die, no counter on the bottom. */
+    /* DIE_BANK */
     0x41,0x40,0x42, 0x7D,0x7E,0x7F, 0x43,0x40,0x44,
 
-    /* 18 - "Roll" button with no counter. Faces 14-16 carry a rolls-remaining
-       mark in the bottom center, which fujirkle has no use for. */
+    /* DIE_ROLL */
     0x41,0x40,0x42, 0x2C,0x2D,0x2E, 0x43,0x40,0x44,
 };
 
@@ -207,8 +193,6 @@ void resetGraphics()
 void resetScreen(bool forBorderScreen)
 {
     if (!forBorderScreen) {
-        highlightX = -1;
-        hiliteCol = -1;
         hires_Mask(0, 0, WIDTH, HEIGHT, BG_FILL);
     } else {
         // Border screen: clear everything except the 3x3 dice corners, so
@@ -270,41 +254,10 @@ void drawDieSpace(unsigned char x, unsigned char y)
     hires_Mask(x, y, 3, 3, BG_FILL);
 }
 
-void drawClock(unsigned char x, unsigned char y)
-{
-    hires_putc(x, y, PAL_NORMAL, 0x37);
-}
-
 void drawConnectionIcon(unsigned char x, unsigned char y)
 {
     hires_putc(x,   y, PAL_NORMAL, 0x03);
     hires_putc(x+1, y, PAL_NORMAL, 0x04);
-}
-
-void drawGameName(unsigned char x, unsigned char y)
-{
-    hires_putc(x-1, y, PAL_NORMAL, 0x38);
-    hires_putc(x,   y, PAL_NORMAL, 0x39);
-    hires_putc(x+1, y, PAL_NORMAL, 0x3A);
-    hires_putc(x+2, y, PAL_NORMAL, 0x3B);
-    hires_putc(x+3, y, PAL_NORMAL, 0x3C);
-    hires_putc(x+4, y, PAL_NORMAL, 0x3D);
-
-    // Glyph 0x38 carries the score-box left border for the in-game
-    // placement. For a standalone logo (x != SCORES_X) erase that border
-    // bar - the left 4 pixels - keeping the logo's bottom tail intact.
-    if (x != SCORES_X) {
-        unsigned char r;
-        unsigned char *pos = (unsigned char *)SCREEN
-                           + (uint16_t)y * 1280 + (uint16_t)(x - 1) * 4;
-        BEGIN_GFX
-        for (r = 0; r < 8; r++) {
-            pos[0] = BG_FILL;
-            pos[1] = BG_FILL;
-            pos += 160;
-        }
-        END_GFX
-    }
 }
 
 void drawLine(unsigned char x, unsigned char y, unsigned char w)
@@ -329,8 +282,8 @@ void drawBox(unsigned char x, unsigned char y, unsigned char w, unsigned char h)
     hires_putc(x+w+1, y+h+1, PAL_NORMAL, 0x5A);
 }
 
-// 0x5B and 0x58 are the top and bottom tees - see the decoded glyph table in
-// the notes. The verticals are the same 0x7C the box sides use.
+// 0x5B and 0x58 are the top and bottom tees; the verticals are the same 0x7C
+// the box sides use.
 void drawBoxDivider(unsigned char x, unsigned char y, unsigned char h)
 {
     unsigned char i;
@@ -352,114 +305,18 @@ void drawDie(unsigned char x, unsigned char y, unsigned char s, bool isSelected,
 {
     const unsigned char *src;
     unsigned char r, c, pal;
-    if (!s || s > 18) return;
+    if (!s || s > DIE_ROLL) return;
 
     src = diceChars + (s - 1) * 9;
     // Only the six faces have a selected variant - the button faces sit past
     // it, so offsetting them would read off the end of the table.
     if (isSelected && s <= 6) src += 54;
     // Highlighted dice flash red; the highlighted buttons use cyan.
-    pal = isHighlighted ? (s >= 14 ? PAL_ALT : PAL_HILITE) : PAL_NORMAL;
+    pal = isHighlighted ? (s > 6 ? PAL_ALT : PAL_HILITE) : PAL_NORMAL;
 
     for (r = 0; r < 3; r++)
         for (c = 0; c < 3; c++)
             hires_putc(x + c, y + r, pal, *src++);
-}
-
-void drawBoard()
-{
-    unsigned char x, y;
-
-    // Thin horizontal rules.
-    for (x = 9;  x < 40; x++) hires_putc(x, 9,  PAL_NORMAL, 0x54);
-    for (x = 10; x < 40; x++) hires_putc(x, 12, PAL_NORMAL, 0x54);
-    for (x = 0;  x <  9; x++) hires_putc(x, 5,  PAL_NORMAL, 0x54);
-
-    // Thick horizontal rules.
-    for (x = 16; x < 40; x++) hires_putc(x, 0,  PAL_NORMAL, 0x52);
-    for (x = 10; x < 40; x++) hires_putc(x, 2,  PAL_NORMAL, 0x52);
-    for (x = 10; x < 40; x++) hires_putc(x, 20, PAL_NORMAL, 0x52);
-
-    drawBox(9, 2, 5, 17);
-
-    // Vertical dividers.
-    for (y = 0; y < 20; y++)
-        for (x = 15; x <= 39; x += 4)
-            hires_putc(x, y, PAL_NORMAL, (y == 0) ? 0x5B : 0x7C);
-
-    // Cross / T tiles at the rule intersections.
-    hires_putc(9, 9,  PAL_NORMAL, 0x53);
-    hires_putc(9, 12, PAL_NORMAL, 0x53);
-    for (x = 15; x <= 39; x += 4) {
-        hires_putc(x, 2,  PAL_NORMAL, 0x50);
-        hires_putc(x, 9,  PAL_NORMAL, 0x4F);
-        hires_putc(x, 12, PAL_NORMAL, 0x4F);
-        hires_putc(x, 20, PAL_NORMAL, 0x58);
-    }
-
-    hires_putc(15, 0, PAL_NORMAL, 0x51);
-
-    // Right corners / tees for the rightmost vertical.
-    hires_putc(39, 0,  PAL_NORMAL, 0x55);
-    hires_putc(39, 2,  PAL_NORMAL, 0x60);
-    hires_putc(39, 9,  PAL_NORMAL, 0x5F);
-    hires_putc(39, 12, PAL_NORMAL, 0x5F);
-    hires_putc(39, 20, PAL_NORMAL, 0x5A);
-
-    // Score-row labels.
-    for (y = 0; y < 14; y++)
-        drawTextAlt(SCORES_X, scoreY[y], scores[y]);
-
-    drawGameName(SCORES_X, scoreY[14]);
-}
-
-void clearBelowBoard()
-{
-    hires_Mask(0, HEIGHT - 4, WIDTH, 4, BG_FILL);
-}
-
-// Active-column highlight: remap background pixels in the active player's
-// three interior cells (rows 0..20) between COL_BG and COL_BG_HILITE.
-static void hilite_column(unsigned char player, bool on)
-{
-    unsigned char cx = SCORES_X + 6 + player * 4;
-    unsigned char from = on ? COL_BG : COL_BG_HILITE;
-    unsigned char to   = on ? COL_BG_HILITE : COL_BG;
-    unsigned char fromHi = from << 4, toHi = to << 4;
-    uint16_t row;
-
-    // Tint only between the box rules (cells 1..19) so it does not bleed
-    // over the top/bottom borders.
-    BEGIN_GFX
-    for (row = 8; row < 20 * 8; row++) {
-        unsigned char *pos = (unsigned char *)SCREEN + row * 160 + (uint16_t)cx * 4;
-        unsigned char j, b, hi, lo;
-        for (j = 0; j < 12; j++) {
-            b = pos[j];
-            hi = b & 0xF0;
-            lo = b & 0x0F;
-            if (hi == fromHi) hi = toHi;
-            if (lo == from)   lo = to;
-            pos[j] = hi | lo;
-        }
-    }
-    END_GFX
-}
-
-void setHighlight(int8_t player, bool isThisPlayer, uint8_t flash)
-{
-    (void)isThisPlayer; (void)flash;
-    if (highlightX != player) {
-        if (highlightX >= 0) {
-            hiliteCol = -1;
-            hilite_column(highlightX, false);
-        }
-        highlightX = player;
-    }
-    if (player >= 0) {
-        hiliteCol = SCORES_X + 6 + player * 4;
-        hilite_column(player, true);
-    }
 }
 
 // ---- Dice cursor: a chunky frame saved/restored cell by cell ----
@@ -532,12 +389,6 @@ void hideDiceCursor(unsigned char x)
     cursorActive = false;
 }
 
-// Drop the saved cells rather than let the next draw paint them back.
-void cancelDiceCursor()
-{
-    cursorActive = false;
-}
-
 bool saveScreenBuffer()
 {
     return false;
@@ -559,7 +410,6 @@ extern unsigned char charset[];
 #define ROP_ORANGE 0b10101010
 #define BOX_SIDE 0b111100
 
-int8_t highlightX=-1;
 bool inBorderScreen=false;
 uint8_t box_color = ROP_ORANGE;
 
@@ -580,17 +430,8 @@ uint8_t diceChars[] = {
   0x16, 0x0C, 0x17, 0x00, 0x05, 0x00, 0x18, 0x0D, 0x19, // 5
   0x16, 0x0C, 0x17, 0x0A, 0x00, 0x0B, 0x18, 0x0D, 0x19, // 6
 
-  // "Roll" button
-  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, // 13 - Empty space
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x1A, 0x04, // 14 - 1 Roll left
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x15, 0x04, // 15 - 2 Rolls left
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x1F, 0x04, // 16 - Cannot Roll
-
-  // Bank button. Same rounded corners as a die, no counter on the bottom row.
-  0x01, 0x00, 0x02, 0x5E, 0x5F, 0x60, 0x03, 0x00, 0x04, // 17 - Bank
-
-  // Roll with no counter - 14-16 carry a rolls-remaining mark we do not want
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x00, 0x04  // 18 - Roll
+  0x01, 0x00, 0x02, 0x5E, 0x5F, 0x60, 0x03, 0x00, 0x04, // DIE_BANK
+  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x00, 0x04  // DIE_ROLL
 };
 
 
@@ -615,55 +456,6 @@ void initGraphics() {
   screen(1,1);
 }
 
-// Red / Blue vertical lines
-uint8_t highlight[] = {0b100000, 0b1010000};
-
-void setHighlight(int8_t player, bool isThisPlayer, uint8_t flash ) {
-  static uint8_t i;
-  if (state.drawBoard) {
-    highlightX=player;
-    return;
-  }
-  if (flash)
-    return;
-
-  waitvsync();
-
-  // Two passes. First pass hides the previous highlight. Second pass draws the new highlight.
-  for(i=0;i<2;i++) {
-    if (highlightX>=0 ) {
-      if (i==0) {
-        if (highlightX!=player) {
-
-          drawBox(SCORES_X+5+highlightX*4,0,3,19);
-
-          if (highlightX>0)
-            hires_Mask(SCORES_X+5+highlightX*4,2,1,19*8+5,highlight[i]);
-
-          if (highlightX<5)
-            hires_Mask(SCORES_X+9+highlightX*4,2,1,19*8+5,highlight[i]);
-
-          // Redraw horizontal board lines
-          // Thin horz ines
-          hires_Mask(SCORES_X,9*8,29,1, 0xff & ROP_ORANGE);
-          hires_Mask(SCORES_X,12*8,29,1, 0xff & ROP_ORANGE);
-
-          // Thick horz lines
-          hires_Mask(SCORES_X+6,0, 23,2, 0xff & ROP_ORANGE);
-          hires_Mask(SCORES_X,2*8,29,2, 0xff & ROP_ORANGE);
-          hires_Mask(SCORES_X,20*8-1,29,2, 0xff & ROP_ORANGE);
-        }
-      } else {
-        box_color=ROP_BLUE;
-        drawBox(SCORES_X+5+highlightX*4,0,3,19);
-        box_color=ROP_ORANGE;
-      }
-    }
-
-    highlightX=player;
-  }
-}
-
 bool saveScreenBuffer() {
   // No room on CoCo 32K for second page
   return false;
@@ -675,15 +467,11 @@ void restoreScreenBuffer() {
 
 void drawText(unsigned char x, unsigned char y, char* s) {
   static unsigned char c;
-  if (y==255)
-    y=scoreY[14]*8-OFFSET_Y+1;
-  else {
-    y=y*8-OFFSET_Y;
-    if (y==8*(HEIGHT-1)-OFFSET_Y) {
-      y=182;
-    } else if (y==8*(HEIGHT-3)-OFFSET_Y) {
-      y=162;
-    }
+  y=y*8-OFFSET_Y;
+  if (y==8*(HEIGHT-1)-OFFSET_Y) {
+    y=182;
+  } else if (y==8*(HEIGHT-3)-OFFSET_Y) {
+    y=162;
   }
 
 
@@ -699,28 +487,19 @@ void drawChar(unsigned char x, unsigned char y, char c, unsigned char alt) {
 }
 
 void drawTextAlt(unsigned char x, unsigned char y, char* s) {
-  static unsigned char c, mustAlt;
-    static uint8_t rop;
-  // drawLogo() renders the logo at y == 2, so skip the in-game forced
-  // alt-color path there and preserve the split "fujiRKLE" styling.
-  if (state.inGame && y == 2 && x == WIDTH/2 - 4) {
-    mustAlt = false;
-  } else {
-    mustAlt = state.inGame && x > SCORES_X + 5 && y < 21;
-  }
+  static unsigned char c;
+  static uint8_t rop;
 
   y=y*8-OFFSET_Y;
   if (y==8*(HEIGHT-1)-OFFSET_Y) {
     y=182;
   }
 
-while ((c = *s++) != 0) {
-      if (mustAlt) {
-        rop = ROP_BLUE;
-      } else if (y!=21*8-OFFSET_Y  && (c<65 || c> 90)) {
-        rop = ROP_BLUE;
-      } else {
-        rop = ROP_CPY;
+  while ((c = *s++) != 0) {
+    if (y!=21*8-OFFSET_Y && (c<65 || c> 90)) {
+      rop = ROP_BLUE;
+    } else {
+      rop = ROP_CPY;
     }
 
     if (c>=97 && c<=122) c-=32;
@@ -757,7 +536,7 @@ void drawDie(unsigned char x, unsigned char y, unsigned char s, bool isKept, boo
   static const unsigned char *source;
 
   // Don't draw die if invalid index passed in
-  if (!s || s>18 || y==HEIGHT-3)
+  if (!s || s>DIE_ROLL || y==HEIGHT-3)
     return;
 
   // Change the dice color
@@ -789,16 +568,8 @@ void drawIcon(unsigned char x, unsigned char y, unsigned char icon) {
   hires_putc(x,y==HEIGHT-1 ? 182 : y*8-OFFSET_Y,ROP_CPY, icon);
 }
 
-void drawClock(unsigned char x, unsigned char y) {
-  hires_putcc(x,y*8-OFFSET_Y,ROP_CPY, 0x2526);
-}
-
 void drawConnectionIcon(unsigned char x, unsigned char y) {
   hires_putcc(x,y==HEIGHT-1 ? 182 : y*8-OFFSET_Y,ROP_CPY, 0x5c5d);
-}
-
-void clearBelowBoard() {
-  hires_Mask(0,161,40,31,0);
 }
 
 void drawBlank(unsigned char x, unsigned char y) {
@@ -813,40 +584,6 @@ void drawSpace(unsigned char x, unsigned char y, unsigned char w) {
 // die's bottom edge behind.
 void drawDieSpace(unsigned char x, unsigned char y) {
   hires_Mask(x,diePixelY(y),3,24,0);
-}
-
-void drawBoard() {
-  static uint8_t y,x;
-
-  // Vertical lines
-  for (x=SCORES_X+9;x<32;x+=4) {
-    hires_Mask(x,0,1,160,0x20);
-  }
-
-  // Main scores box
-  drawBox(SCORES_X+5,0,23,19);
-  drawBox(SCORES_X-1,2,5,17);
-
-  // Thin horz ines
-  hires_Mask(SCORES_X,9*8,29,1, 0xff & ROP_ORANGE);
-  hires_Mask(SCORES_X,12*8,29,1, 0xff & ROP_ORANGE);
-
-  // Thick horz lines
-  hires_Mask(SCORES_X,2*8,29,2, 0xff & ROP_ORANGE);
-  hires_Mask(SCORES_X,20*8-1,29,2, 0xff & ROP_ORANGE);
-
-  // Score names (16 for end game score)
-  for(y = 0; y<14; y++) {
-    drawTextAlt(SCORES_X,scoreY[y],scores[y]);
-  }
-
-  // Game name glyphs - left over scorecard art
-  drawGameName(SCORES_X,255);
-}
-
-void drawGameName(unsigned char x, unsigned char y) {
-  char gameName[] = {0x1b, 0x1c, 0x1d, 0x1e, 0x1e, 0};
-  drawText(x,y,&gameName);
 }
 
 
@@ -914,8 +651,6 @@ void drawBoxDividerWide(unsigned char x, unsigned char y, unsigned char h) {
 // Move it whenever DICE_Y moves or the frame detaches from the dice.
 #define DICE_CURSOR_BASE 161
 
-// fujitzee nudged x past its roll button when x was ROLL_X-1. ROLL_X is 8 here,
-// so that fired on the first die's column. Our buttons are not on the dice row.
 void drawDiceCursor(unsigned char x) {
   // Sides
   hires_Mask(x-1,DICE_CURSOR_BASE-27,1,28,0x14);
@@ -941,16 +676,10 @@ void hideDiceCursor(unsigned char x) {
   hires_Mask(x+3,DICE_CURSOR_BASE-27,1,28,0);
 }
 
-// CoCo 1/2 draws and erases the cursor with masks and keeps no backing store,
-// so there is nothing stale to discard.
-void cancelDiceCursor() {}
-
 void resetGraphics() {
   pmode(0, 0x400);
   pcls(0x60);
   screen(0,0);
-
-  // Future - mount and start Lobby
 }
 
 void waitvsync() {

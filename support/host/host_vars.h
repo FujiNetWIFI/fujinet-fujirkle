@@ -10,7 +10,6 @@
 #define ROLL_SOUND_MOD 1
 #define ROLL_FRAMES 8
 #define BOTTOM_HEIGHT 4
-#define SCORES_X 10
 #define GAMEOVER_PROMPT_Y (HEIGHT - 3)
 #define ROLL_X (WIDTH - 25)
 #define TIMER_X 12

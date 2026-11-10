@@ -21,8 +21,8 @@ uint16_t getTime() {
 void quit() {
   resetScreen(false);
   resetGraphics();
-  fuji_set_boot_config(1);
-  exit(0);
+  fuji_set_boot_mode(FUJI_BOOT_MODE_LOBBY);
+  asm("jmp $E477"); // COLDSV
 }
 
 void housekeeping() {

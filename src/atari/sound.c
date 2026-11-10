@@ -11,9 +11,6 @@
 #include "../misc.h"
 #include "../platform-specific/sound.h"
 
-// Set to control delay of played note
-static uint8_t delay;
-
 void initSound() {
   // Silence SIO noise
   OS.soundr = 0;

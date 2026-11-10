@@ -15,12 +15,12 @@
 
 extern unsigned char charset[];
 
-// I'm using the space XL/XE allocates to BASIC for player/missles, charset, and screen buffer/backup
+// I'm using the space XL/XE allocates to BASIC for the charset and screen buffer/backup
 // On graphics initialization, I turn off BASIC, freeing up this space.
 
 // There are two startup scenarios for XL/XE that must be considered:
 // 1. If BASIC is disabled, the cc65 Stack will grow down from $BC1F, so to leave 512 bytes for stack,
-//    so, I'm allowing $A000-$BA1F for charset, screen/buf, and pmgraphics.
+//    so, I'm allowing $A000-$BA1F for charset and screen/buf.
 
 // 2. If BASIC is enabled, the stack grows down from $9C1F. So, again allowing for 512 byte stack,
 //    $9A1F is as high as we want to allow the program to reach without needing custom cc65 configs/segments
@@ -29,18 +29,17 @@ extern unsigned char charset[];
 
 #define CHARSET_LOC 0xB000
 #define SCREEN_LOC ((uint8_t*)0xB400)
-#define SCREEN_BAK 0xAB00
-#define PM_BASE 0xA000
+#define SCREEN_BAK ((uint8_t*)0xAB00)
 
 
 #define xypos(x,y) (SCREEN_LOC + x + (y)*WIDTH)
 
-unsigned char colorMode=0, oldChbas=0, highlightX=0, prevHighlightX=0, missleLineVisible=0, prevMissleLineVisible=0, colIndex=0;
+unsigned char colorMode=0, oldChbas=0, colIndex=0;
 
 // 26 lines
 void DisplayList =
 {
-    DL_BLK8,DL_BLK8, // 2 Blanks Lines
+    DL_BLK8,DL_BLK8, // 2 blank lines
     DL_LMS(DL_CHR40x8x4),SCREEN_LOC, // 1 Line
     DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4, // 5 Lines
     DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4,DL_CHR40x8x4, // 5 Lines
@@ -50,15 +49,11 @@ void DisplayList =
     DL_JVB  /* JVB Destination will be updated at the real display list location*/
 };
 
-// Color scheme: 
-// Player/Missle: Current player higlight, other player highlight, Shadow, Highlight
-// Shadow, Highlights, White, Alt White, Background
+// COLOR0-4: Shadow, Highlights, White, Alt White, Background
 const unsigned char colors[] = {
- 0xA2, 0x82, 0x00, 0x2A, 0x00,  0x00, 0x2A, 0x0E, 0xCC,  0x84, // NTSC
- 0x92, 0x72, 0x00, 0xFA, 0x00,  0x00, 0xFA, 0x0E, 0xBC,  0x74 // PAL
+ 0x00, 0x2A, 0x0E, 0xCC, 0x84, // NTSC
+ 0x00, 0xFA, 0x0E, 0xBC, 0x74  // PAL
 };
-
-uint8_t own_player;
 
 const unsigned char diceChars[] = {
   // Normal dice
@@ -77,48 +72,18 @@ const unsigned char diceChars[] = {
   0x26, 0x4C, 0x27, 0x20, 0x25, 0x20, 0x28, 0x4D, 0x29, // 5
   0x26, 0x4C, 0x27, 0x2A, 0x20, 0x2B, 0x28, 0x4D, 0x29, // 6
 
-
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 13 - Empty space
-    
-  // "Roll" button
-  0x41, 0x40, 0x42, 0x2C, 0x2D, 0x2E, 0x43, 0x30, 0x44, // 14 - 1 Roll left
-  0x41, 0x40, 0x42, 0x2C, 0x2D, 0x2E, 0x43, 0x2F, 0x44, // 15 - 2 Rolls left
-  0x41, 0x40, 0x42, 0x2C, 0x2D, 0x2E, 0x43, 0x50, 0x44, // 16 - Cannot roll
-  
-  // "Roll" button pushed
-  0xC1, 0xC0, 0xC2, 0xAC, 0xAD, 0xAE, 0xC3, 0xB0, 0xC4, // 17 - 1 Roll left
-  0xC1, 0xC0, 0xC2, 0xAC, 0xAD, 0xAE, 0xC3, 0xAF, 0xC4, // 18 - 2 Rolls left
-  0xC1, 0xC0, 0xC2, 0xAC, 0xAD, 0xAE, 0xC3, 0xD0, 0xC4, // 19 - Cannot roll
-  
-
-  // Alternate color
-  0xC1, 0xC0, 0xC2, 0xC0, 0xC5, 0xC0, 0xC3, 0xC0, 0xC4, // 1
-  0xC1, 0xC0, 0xC7, 0xC0, 0xC0, 0xC0, 0xC8, 0xC0, 0xC4, // 2
-  0xC1, 0xC0, 0xC7, 0xC0, 0xC5, 0xC0, 0xC8, 0xC0, 0xC4, // 3
-  0xC6, 0xC0, 0xC7, 0xC0, 0xC0, 0xC0, 0xC8, 0xC0, 0xC9, // 4
-  0xC6, 0xC0, 0xC7, 0xC0, 0xC5, 0xC0, 0xC8, 0xC0, 0xC9, // 5
-  0xC6, 0xC0, 0xC7, 0xCA, 0xC0, 0xCB, 0xC8, 0xC0, 0xC9, // 6
-
-  // Kept Alternate dice
-  0xA1, 0xCC, 0xA2, 0xA0, 0xA5, 0xA0, 0xA3, 0xCD, 0xA4, // 1
-  0xA1, 0xCC, 0xA7, 0xA0, 0xA0, 0xA0, 0xA8, 0xCD, 0xA4, // 2
-  0xA1, 0xCC, 0xA7, 0xA0, 0xA5, 0xA0, 0xA8, 0xCD, 0xA4, // 3
-  0xA6, 0xCC, 0xA7, 0xA0, 0xA0, 0xA0, 0xA8, 0xCD, 0xA9, // 4
-  0xA6, 0xCC, 0xA7, 0xA0, 0xA5, 0xA0, 0xA8, 0xCD, 0xA9, // 5
-  0xA6, 0xCC, 0xA7, 0xAA, 0xA0, 0xAB, 0xA8, 0xCD, 0xA9, // 6
-
-  // Selected is the same tile inverted, +0x80 per byte
-  0x41, 0x40, 0x42, 0x2C, 0x2D, 0x2E, 0x43, 0x40, 0x44, // 32 - roll
-  0xC1, 0xC0, 0xC2, 0xAC, 0xAD, 0xAE, 0xC3, 0xC0, 0xC4, // 33 - roll lit
-  0x41, 0x40, 0x42, 0x7D, 0x7E, 0x7F, 0x43, 0x40, 0x44, // 34 - bank
-  0xC1, 0xC0, 0xC2, 0xFD, 0xFE, 0xFF, 0xC3, 0xC0, 0xC4  // 35 - bank lit
+  // Buttons; lit is the same tile inverted, +0x80 per byte
+  0x41, 0x40, 0x42, 0x2C, 0x2D, 0x2E, 0x43, 0x40, 0x44, // roll
+  0xC1, 0xC0, 0xC2, 0xAC, 0xAD, 0xAE, 0xC3, 0xC0, 0xC4, // roll lit
+  0x41, 0x40, 0x42, 0x7D, 0x7E, 0x7F, 0x43, 0x40, 0x44, // bank
+  0xC1, 0xC0, 0xC2, 0xFD, 0xFE, 0xFF, 0xC3, 0xC0, 0xC4  // bank lit
 };
 
 // Zero based indices into the table above
-#define TILE_ROLL      31
-#define TILE_ROLL_LIT  32
-#define TILE_BANK      33
-#define TILE_BANK_LIT  34
+#define TILE_ROLL      12
+#define TILE_ROLL_LIT  13
+#define TILE_BANK      14
+#define TILE_BANK_LIT  15
 
 uint8_t cursorUpper[] = {177,182,182,182,178,0,0,0,0,0};
 uint8_t cursorLower[] = {179,182,182,182,180,0,0,0,0,0};
@@ -129,7 +94,7 @@ unsigned char cycleNextColor() {
 
 void setColorMode(unsigned char mode) {
   colorMode = mode; 
-  memcpy(&OS.pcolr0, &colors[colIndex+1], 9);
+  memcpy(&OS.color0, &colors[colIndex], 5);
 }
 
 
@@ -143,18 +108,15 @@ void initGraphics() {
 
     // Disable BASIC at shadow location
     POKE(0x3F8, 1);
-
-    // Clear pmg memory
-    memset(PM_BASE,0, 0x800);
   }
 
   resetScreen(false);
-  if (PEEK(53268)==1) {
-    colIndex=10;
+  if (PEEK(0xD014)==1) {
+    colIndex=5;
   }
   
   // Set the displaylist end JVB instruction to point to the start of the display list
-  POKEW(PEEKW(0x230)+31, OS.sdlst);
+  POKEW(PEEKW(0x230)+31, (unsigned)OS.sdlst);
 
   // Overwrite current Display list with custom
   waitvsync();
@@ -165,65 +127,17 @@ void initGraphics() {
   oldChbas = OS.chbas;
   OS.chbas = CHARSET_LOC/256;
 
-  // Initialize player+missle graphics, single line
-  OS.sdmctl = OS.sdmctl | (12 + 16);
-  POKE(0xD407, PM_BASE/256);
-
-  // Turn on P+M
-  POKE(0xD01D, 3);
-  
-  // Players behind playfield
-  OS.gprior = 4; 
-   
-  // Vertical selector - player 0
-  memset(PM_BASE+1024+28,0xff,158);
-  POKE(0xd000,0); // horiz loc
-  POKE(0xd008,1); //  Double width
-  
-  // Missle side wall
-  memset(PM_BASE+768+29,0x18,156);
-
-  // Side wall upper and lower rounder corners
-  POKE(PM_BASE+768+26,0x20);
-  POKEW(PM_BASE+768+27,0x3030);
-
-  POKEW(PM_BASE+768+185,0x3030);
-  POKE(PM_BASE+768+187,0x24);
-  POKEW(PM_BASE+768+188,0x080c);
-  
-  POKEW(0xd005,0); // missle 1+2
- 
-  // Stub
   setColorMode(0);
-}
-
-void setHighlight(int8_t player, bool isThisPlayer, uint8_t flash ) {
-  highlightX=player;
-  POKE(0xd000,player>-1 ? player*16+112 : 0);
-  if (isThisPlayer) {
-    OS.pcolr0 = colors[colIndex] + flash; 
-  } else {
-    setColorMode(colorMode);
-  }
 }
 
 bool saveScreenBuffer() {
   memcpy(SCREEN_BAK, SCREEN_LOC, WIDTH*HEIGHT);
-  prevMissleLineVisible = missleLineVisible;
-  prevHighlightX = highlightX;
+  return true;
 }
 
 void restoreScreenBuffer() {
   waitvsync();
   memcpy(SCREEN_LOC, SCREEN_BAK, WIDTH*HEIGHT);
-  if (prevHighlightX) {
-    setHighlight(prevHighlightX, state.localPlayerIsActive, 0);
-  }
-  
-  if (prevMissleLineVisible) {
-    POKEW(0xd005, 0xd0d0); // Right side missile location
-    missleLineVisible=1;
-  }
 }
 
 void drawText(unsigned char x, unsigned char y, char* s) {
@@ -269,9 +183,7 @@ void drawTextAlt(unsigned char x, unsigned char y, char* s) {
 void resetScreen(bool forBorderScreen) { 
   static uint8_t i;
   waitvsync();
-  setHighlight(-1,0,0);
-  POKEW(0xd005,0);  // Right side missile location
-  missleLineVisible=false;
+  setColorMode(colorMode);
   // Clear screen memory
   if (!forBorderScreen) {
     memset((void*)SCREEN_LOC,0,WIDTH*HEIGHT);
@@ -285,18 +197,17 @@ void resetScreen(bool forBorderScreen) {
 }
 
 void drawDie(unsigned char x, unsigned char y, unsigned char s, bool isSelected, bool isHighlighted) {
-  static unsigned char *source, *dest;
+  static const unsigned char *source;
+  static unsigned char *dest;
   static unsigned char idx;
 
   if (s>=1 && s<=6) {
     idx = s-1;
     if (isSelected)
       idx += 6;          // kept
-    if (isHighlighted)
-      idx += 19;         // alternate color block
-  } else if (s==18) {    // DIE_ROLL
+  } else if (s==DIE_ROLL) {
     idx = isHighlighted ? TILE_ROLL_LIT : TILE_ROLL;
-  } else if (s==17) {    // DIE_BANK
+  } else if (s==DIE_BANK) {
     idx = isHighlighted ? TILE_BANK_LIT : TILE_BANK;
   } else {
     return;
@@ -323,78 +234,8 @@ void drawSpace(unsigned char x, unsigned char y, unsigned char w) {
   memset(xypos(x,y),0,w);
 }
 
-void drawClock(unsigned char x, unsigned char y) {
-  POKE(xypos(x,y),0x37);
-}
-
 void drawConnectionIcon(unsigned char x, unsigned char y) {
   POKEW(xypos(x,y), 0x0403);
-}
-
-void clearBelowBoard() {
-  memset(xypos(0,HEIGHT-5),0,200);
-}
-
-void drawBoard() { 
-  static uint8_t y,x,c;
-  static unsigned char *dest;
-
-  // Thin horz ines
-  memset(xypos(10,9),84,30);
-  memset(xypos(11,12),84,29);
-  memset(xypos(0,5),84,10);
-
-  // Thick horz lines
-  memset(xypos(17,0),82,23);
-  memset(xypos(11,2),82,29);
-  memset(xypos(11,20),82,29);
-
-  // Main scores box
-  drawBox(10,2,5,17);
- 
-  // Vertical lines
-  c=91;
-  dest = xypos(16,0);
-  for (y=0;y<20;y++) {
-    for (x=0;x<24;x+=4) {
-      *(dest+x)=c;
-    }
-    c=124;
-    dest+=40;
-  }
-
-  // Cross sections
-  dest = xypos(10,9);
-  for (x=0;x<7;x++) {
-    if (x) {
-      POKE(dest-40*7,86);
-      POKE(dest+40*11,88);
-    }
-    *dest=*(dest+40*3)=83;
-    
-    if (x)
-      dest+=4;
-    else
-      dest+=6;
-  }
-  
-  POKE(xypos(16,0),81);
-
-  // Set 2 missles that are the rightmost vertical line
-  POKEW(0xd005, 0xd0d0); // Right side missile location
-  missleLineVisible=1;
-
-  // Score names (16 for end game score)
-  for(y = 0; y<14; y++) {
-    drawTextAlt(11,scoreY[y],scores[y]);
-  }
-  
-  drawGameName(11,scoreY[14]);
-  POKE(xypos(10,scoreY[14]),5);
-}
-
-void drawGameName(unsigned char x, unsigned char y) {
-  memcpy(xypos(x-1,y),&"89:;<=",6); // "/|\TZEE"
 }
 
 void drawLine(unsigned char x, unsigned char y, unsigned char w) {

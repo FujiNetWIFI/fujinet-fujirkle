@@ -20,7 +20,6 @@
 // tumble is over before it can be seen.
 #define PACE_WITH_VSYNC 1
 #define BOTTOM_HEIGHT 4
-#define SCORES_X 10
 #define GAMEOVER_PROMPT_Y HEIGHT-3
 // x86 is little endian, so no be=1 - and WIRE_BIG_ENDIAN stays unset so the
 // score bytes are recombined low byte first to match.

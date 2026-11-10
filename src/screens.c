@@ -312,7 +312,7 @@ void showPlayerNameScreen(uint8_t p) {
   
   drawBox(WIDTH/2-5,10,PLAYER_NAME_MAX+1,1);
 
-  // Copy name to local buffer in case 
+  // Edit a copy, so canceling leaves the name untouched
   playerName=prefs.localPlayer[p].name;
   strcpy(tempBuffer, playerName);
   
@@ -322,7 +322,7 @@ void showPlayerNameScreen(uint8_t p) {
 
     while (!inputFieldCycle(WIDTH/2-4, 11, PLAYER_NAME_MAX, tempBuffer)) {
 
-      // Check if we are deleting this player (hitting / or cancelling a new player)
+      // Check if we are deleting this player (hitting / or canceling a new player)
       if (canDelete && (
           input.key == REMOVE_PLAYER_KEY || 
           (input.key == KEY_ESCAPE && strlen(playerName)==0))
@@ -487,7 +487,7 @@ static void redrawLobbyCursor(int8_t dy) {
 
 /// @brief Shows a screen to select a table to join
 void showTableSelectionScreen() {
-  static uint8_t shownChip, altChip, redrawScreen;
+  static uint8_t shownChip, altChip;
   static char* localQuery;
   static Table* table;
   state.inGame=lobbyTableIndex=altChip=0;
@@ -606,10 +606,7 @@ void showTableSelectionScreen() {
         break;
       } else if (input.key == 'q' || input.key =='Q') {
         quit();
-      } /*else if (input.key != 0) {
-        itoa(input.key, tempBuffer, 10);
-        drawStatusText(tempBuffer);
-      }*/
+      }
 
       if (!shownChip || (clientState.tables.count>0 && input.dirY)) {
         redrawLobbyCursor(input.dirY);

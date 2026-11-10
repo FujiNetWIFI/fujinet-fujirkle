@@ -8,7 +8,7 @@
 #define WIDTH 40
 #define HEIGHT 26
 
-// Other platform specific constnats
+// Other platform specific constants
 
 // POKEY does not block the way a gated speaker does, so without this the tumble
 // is over before it can be seen.
@@ -24,7 +24,6 @@
 #define ROLL_FRAMES 8 // How many roll frames to play
 #define SCORE_CURSOR_ALT 0x80 // Alternate score cursor color
 #define BOTTOM_HEIGHT 4 // How high the bottom panel is
-#define SCORES_X 10 // X start of scoreboard
 #define GAMEOVER_PROMPT_Y HEIGHT-3  
 #define QUERY_SUFFIX "" // No extra params for Atari
 #define ROLL_X WIDTH-25
@@ -68,7 +67,6 @@
 #define KEY_DOWN_ARROW_2    61 // =
 #define KEY_DOWN_ARROW_3    3 // DUMMY
 
-//#define KEY_RETURN       0x0D
 #define KEY_ESCAPE       CH_ESC
 #define KEY_ESCAPE_ALT   1
 
