@@ -19,6 +19,7 @@ Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX re
 | MS-DOS | 40x25 | `r2r/msdos/fujirkle.img` |
 | Atari 8-bit | 40x26 | `r2r/atari/fujirkle.atr` |
 | Apple II | 40x24 | `r2r/apple2/fujirkle.po` |
+| Intellivision | 20x12 | `intv/fujirkle.rom` |
 
 The game board uses one of two layouts, chosen by screen width rather than by
 model. Forty columns get the split dice strip with 3x3 button tiles; 32 columns
@@ -30,6 +31,7 @@ get a tighter strip with vertical button words.
 - `cmoc` and `decb` for CoCo
 - Open Watcom (`wcc`) and `mtools` for MS-DOS
 - `cl65` (cc65) for Atari and Apple II
+- IntyBASIC and `as1600` for Intellivision
 - A compatible FujiNet library for the target platform (`fujinet-lib`)
 
 MS-DOS builds against `fujinet-lib-experimental`, which carries the RS-232
@@ -45,6 +47,7 @@ make coco-dist
 make msdos
 make atari
 make apple2
+make -C intv
 ```
 
 `coco-dist` builds both CoCo binaries onto one disk. It runs `make clean` first,
