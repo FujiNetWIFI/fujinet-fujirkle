@@ -14,10 +14,6 @@
 // Maps the 4 source colors of the 2bpp font onto hardware palette registers.
 extern const unsigned char text_palettes[PAL_COUNT][4];
 
-// First cell of the active player's score column, or -1 if none. Set by
-// setHighlight() in graphics.c.
-extern int8_t hiliteCol;
-
 // Per-palette 2bpp->4bpp expansion table: maps a source font nibble (2 2bpp
 // pixels) to the 4bpp screen byte it becomes. Built once at init so
 // hires_Draw is a table lookup per nibble instead of eight palette lookups.
@@ -30,32 +26,6 @@ void buildExpandTables(void)
     const unsigned char *pal = text_palettes[p];
     for (n = 0; n < 16; n++)
       expandNib[p][n] = (pal[(n >> 2) & 3] << 4) | pal[n & 3];
-  }
-}
-
-// Re-tint any cells of [x, x+w) that fall inside the active score column
-// (rows 1..19): background pixels go from COL_BG to COL_BG_HILITE. This
-// keeps the column highlight intact as score values are drawn over it.
-// Assumes task 1 is already mapped in.
-static void retint_span(uint8_t x, uint8_t y, uint8_t w)
-{
-  uint8_t cx, r, j, b;
-  uint8_t *pos;
-  if (hiliteCol < 0 || y < 1 || y > 19)
-    return;
-  for (cx = x; cx < x + w; cx++) {
-    if (cx < (uint8_t)hiliteCol || cx > (uint8_t)hiliteCol + 2)
-      continue;
-    pos = (uint8_t *)SCREEN + (uint16_t)y * 1280 + (uint16_t)cx * 4;
-    for (r = 0; r < 8; r++) {
-      for (j = 0; j < 4; j++) {
-        b = pos[j];
-        if ((b & 0xF0) == (COL_BG << 4)) b = (b & 0x0F) | (COL_BG_HILITE << 4);
-        if ((b & 0x0F) == COL_BG)        b = (b & 0xF0) | COL_BG_HILITE;
-        pos[j] = b;
-      }
-      pos += 160;
-    }
   }
 }
 
@@ -80,7 +50,6 @@ void hires_Draw(uint8_t x, uint8_t y, uint8_t xlen, uint8_t ylen, uint8_t rop, c
     pos[3] = nib[lo & 15];
     pos += 160;
   }
-  retint_span(x, y, 1);
   END_GFX
 }
 
@@ -114,7 +83,6 @@ void hires_Mask(uint8_t x, uint8_t y, uint8_t xlen, uint8_t ylen, uint8_t c)
     memset(pos, c, (uint16_t)xlen * 4);
     pos += 160;
   }
-  retint_span(x, y, xlen);
   END_GFX
 }
 

@@ -36,7 +36,7 @@ void tone(uint8_t period, uint8_t dur, uint8_t wait) {
     static uint16_t inv;
 
     inv = (uint16_t)(256 - (uint16_t)period) >> 1;
-    inv = (inv > PITCH_OVERHEAD) ? (uint16_t)(inv - PITCH_OVERHEAD) : 1;
+    inv = (inv > PITCH_OVERHEAD) ? (uint16_t)(inv - PITCH_OVERHEAD) : 1U;
 
     period = (uint8_t)(256 - inv);
   }

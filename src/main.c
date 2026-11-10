@@ -1,6 +1,6 @@
 /**
  * @brief   fujirkle
- * @author  Eric Carr, Thomas Cherryhomes, (insert names here)
+ * @author  Eric Carr, Thomas Cherryhomes, Rich Stephens
  * @license gpl v. 3
  * @verbose main
  */
@@ -24,12 +24,10 @@
 #include "fujinet-fuji.h"
 
 // Store default public server endpoint in case lobby did not set app key
-// Local dev server only for now - there is no public fujirkle server yet.
-// Run it with: cd ~/servers/fujinet-game-system/fujirkle/server && go run .
 char serverEndpoint[50] = "https://fujirkle.carr-designs.com/";
 
-// For local dev testing, instead of changing the endpoint above, 
-// set 3rd byte in the e41c0300 appkey to 0xff, which will cause the below endpoing to be used
+// For local dev testing, set the 3rd byte of the 09010300 appkey to 0xff to use
+// this endpoint instead
 char localServer[] = "http://127.0.0.1:8080/";
 
 ClientState clientState;
@@ -78,7 +76,7 @@ int main(void)
           }
           state.apiCallWait=60*failedApiCalls; 
           
-          // After consequitive failures, let the player know we are experiencing technical difficulties
+          // After consecutive failures, let the player know we are experiencing technical difficulties
           if (failedApiCalls>1) {
             drawConnectionIcon(0,HEIGHT-1);
             pause(30);
@@ -110,6 +108,7 @@ int main(void)
 
     processInput();
   }
-
+#ifdef _CMOC_VERSION_
   return 0;
+#endif
 }

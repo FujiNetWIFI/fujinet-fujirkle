@@ -38,10 +38,6 @@ void hires_Draw(uint8_t x, uint8_t y, uint8_t xlen, uint8_t ylen, uint8_t rop, c
 #define PAL_DIM    3   // dimmed (gray) glyphs
 #define PAL_COUNT  4
 
-// Background palette indices used by the active-column highlight.
-#define COL_BG          2   // table background
-#define COL_BG_HILITE   6   // active-column background
-
 // Builds the 2bpp->4bpp expansion tables; call once from initGraphics().
 void buildExpandTables(void);
 

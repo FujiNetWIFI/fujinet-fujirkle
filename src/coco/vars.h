@@ -17,7 +17,6 @@
 // halts until an interrupt, and HDB-DOS masks those around DriveWire transfers.
 // Every frame plays a sound here, and the ROM routine paces it.
 #define BOTTOM_HEIGHT 4
-#define SCORES_X 10
 #define GAMEOVER_PROMPT_Y HEIGHT-3
 #define ROLL_X WIDTH-25
 #define TIMER_X 12
@@ -50,7 +49,6 @@
 #define ROLL_FRAMES 11 // How many roll frames to play
 // PACE_WITH_VSYNC not set - see the CoCo 3 note above
 #define BOTTOM_HEIGHT 3 // How high the bottom panel is
-#define SCORES_X 2 // X start of scoreboard
 #define GAMEOVER_PROMPT_Y HEIGHT-2
 #define ROLL_X WIDTH-24
 #define TIMER_X 5

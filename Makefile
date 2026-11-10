@@ -1,6 +1,9 @@
 PRODUCT = fujirkle
 PRODUCT_UPPER = FUJIRKLE
-PLATFORMS = coco msdos atari apple2
+PLATFORMS += apple2
+PLATFORMS += atari
+PLATFORMS += coco
+PLATFORMS += msdos
 
 # CoCo targets:
 #   make coco        → CoCo 1/2 build
@@ -18,12 +21,7 @@ INCLUDE_DIRS = src/platform-specific
 # cc65 ships its own real versions, so adding it globally would shadow them.
 EXTRA_INCLUDE_COCO = src/include
 
-# msdos needs fujinet-lib-experimental for RS232 support; scoped so it does not
-# drag the experimental branch into the other platforms.
-FUJINET_LIB =
-ifeq ($(PLATFORM),msdos)
-  FUJINET_LIB = https://github.com/FozzTexx/fujinet-lib-experimental.git
-endif
+FUJINET_LIB = https://github.com/FujiNetWIFI/fujinet-lib.git
 
 # Apple II: custom HGR-aware linker config
 LDFLAGS_EXTRA_APPLE2 += -C src/apple2/apple2-hgr.cfg

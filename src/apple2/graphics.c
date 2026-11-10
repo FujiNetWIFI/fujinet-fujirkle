@@ -18,8 +18,6 @@ extern char charset[];
 #define OFFSET_Y 4
 
 uint8_t colorMode=0, oldChbas=0, colIndex=0;
-int8_t highlightX=-1;
-uint8_t own_player;
 bool inBorderScreen=false;
 
 const uint16_t diceRop[] = {
@@ -43,19 +41,13 @@ const unsigned char diceChars[] = {
   0x16, 0x0C, 0x17, 0x00, 0x05, 0x00, 0x18, 0x0D, 0x19, // 5
   0x16, 0x0C, 0x17, 0x0A, 0x00, 0x0B, 0x18, 0x0D, 0x19, // 6
 
-  // "Roll" button
-  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, // 13 - Empty space
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x1A, 0x04, // 14 - 1 Roll left
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x15, 0x04, // 15 - 2 Rolls left
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x1F, 0x04, // 16 - Cannot Roll
-
-  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x00, 0x04, // 17 - roll
-  0x01, 0x00, 0x02, 0x5E, 0x5F, 0x60, 0x03, 0x00, 0x04  // 18 - bank
+  0x01, 0x00, 0x02, 0x0E, 0x0F, 0x10, 0x03, 0x00, 0x04, // roll
+  0x01, 0x00, 0x02, 0x5E, 0x5F, 0x60, 0x03, 0x00, 0x04  // bank
 };
 
 // Zero based indices into the table above
-#define TILE_ROLL 16
-#define TILE_BANK 17
+#define TILE_ROLL 12
+#define TILE_BANK 13
 
 
 unsigned char cycleNextColor() {
@@ -73,39 +65,10 @@ void initGraphics() {
    hires_Init();
 } 
 
-//uint8_t highlight[] = {0x23,0x5b,0x3f,0x5b}; 
-//uint8_t highlight[] = {0b100,0b1010,0b11100,0b1010}; 
-uint16_t highlight[] = {0xA980|0b100, 0xA900|0b1010, 0xA980|0b11100, 0xA900|0b1010}; 
-
-void setHighlight(int8_t player, bool isThisPlayer, uint8_t flash ) {
-  static uint8_t i;
-  if (state.drawBoard) {
-    highlightX=player;
-    return;
-  }
-  if (flash || highlightX==player)  
-    return;   
-  
-  for(i=0;i<2;i++) {
-    if (highlightX>=0) {
-
-      hires_Mask(SCORES_X+5+highlightX*4,4,1,19*8+1,highlight[i+(highlightX==0)*2]);
-      hires_Mask(SCORES_X+9+highlightX*4,4,1,19*8+1,highlight[i+(highlightX==5)*2]);
-
-      if (i==0) {
-        hires_Mask(SCORES_X,2*8,29,2, 0xa9ff); 
-        hires_Mask(SCORES_X,9*8,29,1, 0xa9ff); 
-        hires_Mask(SCORES_X,12*8,29,1, 0xa9ff);
-      }
-    }
-
-    highlightX=player;
-  }
-}
-
 bool saveScreenBuffer() {
   memcpy((void*)0x840,(void*)0x2000,0x17C0);
   memcpy((void*)0x4000,(void*)0x37C0,0x840);
+  return true;
 }
 
 void restoreScreenBuffer() {
@@ -134,20 +97,16 @@ void drawChar(unsigned char x, unsigned char y, char c, unsigned char alt) {
 }
 
 void drawTextAlt(unsigned char x, unsigned char y, char* s) {
-  static unsigned char c, mustAlt;
+  static unsigned char c;
   static uint16_t rop;
 
-  mustAlt = state.inGame && clientState.game.round && x>SCORES_X+5 && y<21;
- 
   y=y*8-OFFSET_Y; 
   if (y==8*(HEIGHT-1)-OFFSET_Y) {
     y=182;
   }
 
   while(c=*s++) {
-    if (mustAlt) {
-      rop = diceRop[3+x%2];
-    } else if (!colorMode && (c<65 || c> 90)) {
+    if (!colorMode && (c<65 || c> 90)) {
       rop = ROP_COLORS; 
     } else {
       rop=ROP_CPY;
@@ -178,9 +137,9 @@ void drawDie(unsigned char x, unsigned char y, unsigned char s, bool isSelected,
     i = s-1;
     if (isSelected)
       i += 6;
-  } else if (s==18) {
+  } else if (s==DIE_ROLL) {
     i = TILE_ROLL;
-  } else if (s==17) {
+  } else if (s==DIE_BANK) {
     i = TILE_BANK;
   } else {
     return;
@@ -211,18 +170,10 @@ void drawIcon(unsigned char x, unsigned char y, unsigned char icon) {
   hires_putc(x,y==HEIGHT-1 ? 182 : y*8-OFFSET_Y,ROP_CPY, icon);
 }
 
-void drawClock(unsigned char x, unsigned char y) {
-  hires_putcc(x,y*8-OFFSET_Y,ROP_CPY, 0x2526);
-}
-
 void drawConnectionIcon(unsigned char x, unsigned char y) {
   hires_putcc(x,y==HEIGHT-1 ? 182 : y*8-OFFSET_Y,ROP_CPY, 0x5c5d);
 }
 
-
-void clearBelowBoard() {
-  hires_Mask(0,161,40,31,0xa900);
-}
 
 void drawBlank(unsigned char x, unsigned char y) {
   hires_putc(x,y*8-OFFSET_Y,ROP_CPY, 0x20);
@@ -230,47 +181,6 @@ void drawBlank(unsigned char x, unsigned char y) {
 
 void drawSpace(unsigned char x, unsigned char y, unsigned char w) {
   hires_Mask(x,y==HEIGHT-3 ? 162 : y*8-OFFSET_Y,w,8,0xa900);
-}
-
-void drawBoard() {
-  static uint8_t y,x;
-
-  // Vertical lines
-  for (x=SCORES_X+9;x<40;x+=4) {
-    hires_Mask(x,0,1,160,0xa984);
-  }
-
-  // Main scores box
-  drawBox(SCORES_X+5,0,23,19);
-  drawBox(SCORES_X-1,2,5,17); 
- 
-  // Fix overlapping box corners 
-  drawChar(SCORES_X-1,2, 0x24, 0);
-
-  // // Thin horz ines
-  hires_Mask(SCORES_X,9*8,29,1, 0xa9ff); 
-  hires_Mask(SCORES_X,12*8,29,1, 0xa9ff);
-  hires_Mask(0,5*8,SCORES_X-1,1, 0xa9ff);  
-  
-
-  // // Thick horz lines
-  hires_Mask(SCORES_X,2*8,29,2, 0xa9ff); 
-  hires_Mask(SCORES_X,20*8-1,29,2, 0xa9ff); 
-  
-
-  // // Score names (16 for end game score)
-  for(y = 0; y<14; y++) { 
-    drawTextAlt(SCORES_X,scoreY[y],scores[y]);
-  } 
-  
-  drawGameName(SCORES_X,scoreY[14]);
-}
-
-void drawGameName(unsigned char x, unsigned char y) {
-  y=y*8-OFFSET_Y+1;
-  hires_putcc(x,y,ROP_CPY, 0x1b1c); 
-  hires_putcc(x+2,y,ROP_CPY, 0x1d1e);  
-  hires_putc(x+4,y,ROP_CPY, 0x1e);
 }
 
 
@@ -306,7 +216,6 @@ void drawLine(unsigned char x, unsigned char y, unsigned char w) {
   hires_Mask(x,y,w,1, 0xa9ff); 
 }
 
-// 42653
 void drawBox(unsigned char x, unsigned char y, unsigned char w, unsigned char h) {
   y=y*8-OFFSET_Y+1;
 
@@ -314,11 +223,6 @@ void drawBox(unsigned char x, unsigned char y, unsigned char w, unsigned char h)
   hires_putc(x,y+3,ROP_CPY, 0x3b);
   hires_putc(x+w+1,y+3,ROP_CPY, 0x3c);
   
-  // Accents if height > 1
-  // if (h>1) {
-  //   hires_putc(x+1,y+8,ROP_CPY, 1);
-  // }
-
   // Top/bottom lines
   hires_Mask(x+1,y+3,w,2, 0xa9ff); 
   hires_Mask(x+1,y+(h+1)*8+2,w,2, 0xa9ff); 
@@ -366,7 +270,7 @@ void resetGraphics() {}
 
 void waitvsync() {
   static uint16_t i;
-  // Aproximate a jiffy for the timer countdown
+  // Approximate a jiffy for the timer countdown
   for ( i=0;i<628;i++);
 }
 

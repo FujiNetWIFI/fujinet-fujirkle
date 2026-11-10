@@ -26,21 +26,6 @@ void tone(uint16_t period, uint8_t dur, uint8_t wait) {
     for (ii=0; ii<40; ii++) ;
 }
 
-// Keeping this here in case I need it
-// void toneFinder() {
-//   clearCommonInput();
-//   while (input.key != KEY_RETURN || i<2) {
-//     while (!kbhit());
-//     input.key = cgetc();
-//     if (input.key == KEY_DOWN_ARROW)
-//       i-=1;
-//     if (input.key == KEY_UP_ARROW)
-//       i+=1;
-//       cprintf("%i ",i);
-//     tone(i,50,0);
-//   }
-// }
-
 void initSound() {}
 
 void soundJoinGame() {

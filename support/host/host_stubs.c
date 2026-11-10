@@ -87,7 +87,6 @@ void drawSpace(unsigned char sx, unsigned char sy, unsigned char w) {
 
 void drawDiceCursor(unsigned char cx) { LOG("drawDiceCursor col %u", cx); }
 void hideDiceCursor(unsigned char cx) { LOG("hideDiceCursor col %u", cx); }
-void cancelDiceCursor(void) { LOG("cancelDiceCursor"); }
 
 void resetScreen(bool b) { (void)b; LOG("resetScreen"); }
 void drawText(unsigned char a, unsigned char b, char *s) {
@@ -102,15 +101,9 @@ void drawLine(unsigned char a, unsigned char b, unsigned char c) { (void)a;(void
 void drawBox(unsigned char a, unsigned char b, unsigned char c, unsigned char d) { (void)a;(void)b;(void)c;(void)d; }
 void drawBoxDivider(unsigned char a, unsigned char b, unsigned char c) { (void)a;(void)b;(void)c; }
 void drawBoxDividerWide(unsigned char a, unsigned char b, unsigned char c) { (void)a;(void)b;(void)c; }
-void drawGameName(unsigned char a, unsigned char b) { (void)a;(void)b; }
-void drawClock(unsigned char a, unsigned char b) { (void)a;(void)b; }
 void drawConnectionIcon(unsigned char a, unsigned char b) { (void)a;(void)b; }
-void clearBelowBoard(void) {}
-void drawBorder(void) {}
-void drawBoard(void) {}
 bool saveScreenBuffer(void) { return false; }
 void restoreScreenBuffer(void) {}
-void setHighlight(int8_t a, bool b, uint8_t c) { (void)a;(void)b;(void)c; }
 void initGraphics(void) {}
 void resetGraphics(void) {}
 void waitvsync(void) {}
@@ -164,7 +157,6 @@ void welcomeActionVerifyServerDetails(void) {}
 void welcomeActionVerifyPlayerName(void) {}
 void showWelcomeScreen(void) {}
 void showTableSelectionScreen(void) {}
-void showGameScreen(void) {}
 void showInGameMenuScreen(void) {}
 void showPlayerNameScreen(uint8_t p) { (void)p; }
 void showPlayerGroupScreen(void) {}

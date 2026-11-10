@@ -13,12 +13,6 @@
 #include "screens.h"
 #include "gamelogic.h"
 
-// The scorecard is gone, but graphics.c still refers to these until that code
-// is trimmed for fujirkle.
-uint8_t scoreY[] = {3,4,5,6,7,8,10,11,13,14,15,16,17,18,19,21};
-char* scores[] = {"one","two","three","four","five","six","total","bonus",
-                  "set 3","set 4","house","s run","l run","count"};
-
 static uint8_t inputField_done = 1;
 
 // Compile time guard on the wire format. If any compiler pads these structs,
@@ -74,8 +68,6 @@ typedef char assert_game_is_header_plus_players[
 #endif
 
 #define DIE_STEP 4
-#define DIE_ROLL 18   // plain face; 14-16 carry a rolls-remaining mark
-#define DIE_BANK 17
 
 // A shorter screen trades the panel's one blank row for the strip below it
 #ifndef PANEL_H
@@ -458,10 +450,6 @@ static void drawTurnPanel() {
           turnHold ? heldTurn : TURN_SCORE_OF(game), 5);
 }
 
-/// @brief The waiting room shown before play starts: who is here, who is ready.
-//
-// This is a different screen from the game board - no dice, no turn score, and
-// the whole width given over to the player list and their ready state.
 /// @brief The waiting room: centered logo, room name, then the player list with
 /// each player's ready state. Bots are always ready, so they show "ready" from
 /// the moment you arrive.
@@ -1337,7 +1325,7 @@ void processInput() {
   waitOnPlayerMove();
 }
 
-void showInGameHelp() {
+static void showInGameHelp(void) {
   if (saveScreen()) {
     showHelpScreen();
     restoreScreen();

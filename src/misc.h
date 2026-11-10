@@ -44,13 +44,8 @@
 #define ROUND_GAMEOVER 99
 
 #ifdef __WATCOMC__
-/* Watcom defaults to 2-byte struct alignment in 16-bit, which inserts
- * padding before int16_t fields. The server sends bytes assuming the
- * cc65/CMOC tightly-packed layout, so any padding here shifts every
- * field after the pad and corrupts the parsed state (e.g. the local
- * player's name shows up missing its first letter). Force 1-byte
- * packing for the Game/Player/Tables structs so the binary layout
- * matches what the server sends. */
+/* Every wire member is byte sized, but Watcom's 16-bit default is 2-byte
+ * alignment, so pin the wire structs to 1 anyway. */
 #pragma pack(push, 1)
 #endif
 

@@ -12,11 +12,6 @@ void initSound();
 void disableKeySounds();
 void enableKeySounds();
 
-/* Will bring back sound toggle if there is a platform with no controllable sound volume
-bool toggleSound();
-void setSound();
-*/
-
 void soundStop();
 void soundJoinGame();
 void soundMyTurn();

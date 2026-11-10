@@ -30,9 +30,6 @@ void showWelcomeScreen();
 /// @brief Shows a screen to select a table to join
 void showTableSelectionScreen();
 
-/// @brief Shows main game play screen (table and cards)
-void showGameScreen();
-
 /// @brief shows in-game menu
 void showInGameMenuScreen();
 

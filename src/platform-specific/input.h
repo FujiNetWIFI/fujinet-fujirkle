@@ -10,4 +10,9 @@
 // Platform specific implementations
 unsigned char readJoystick();
 
+#ifdef __WATCOMC__
+#include <conio.h>
+char cgetc(void);
+#endif
+
 #endif /* INPUT_H */
