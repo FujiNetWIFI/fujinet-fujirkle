@@ -25,22 +25,25 @@ typedef char assert_game_is_header_plus_players[
 // Row 0 is unusable - drawText underflows there.
 #define BOARD_TOP 3
 
-// Two layouts, chosen by width rather than by model: 40 columns gets the split
-// strip with 3x3 button tiles, 32 the tighter one with vertical words.
+// Two layouts, chosen by width rather than by model: 40 or more columns get the
+// split strip with button tiles, 32 the tighter one with vertical words.
 #if WIDTH >= 40
-// A taller screen sets its own DICE_Y to keep the same two rows beneath the
-// box. Everything below derives from it.
+// A screen of another height sets its own DICE_Y to keep the same two rows
+// beneath the box. Everything below derives from it.
 #ifndef DICE_Y
 #define DICE_Y   18
 #endif
+// A wider screen sets its own strip columns, and DIE_STEP to match its dice
+#ifndef BTN_ROLL_X
 #define BTN_ROLL_X 4
 #define BTN_BANK_X 8
 #define DICE_X   14
-#define BTN_Y    DICE_Y
-#define STRIP_TOP    (DICE_Y - 2)
 #define STRIP_LEFT   2
 #define STRIP_WALL   12
 #define STRIP_RIGHT  38
+#endif
+#define BTN_Y    DICE_Y
+#define STRIP_TOP    (DICE_Y - 2)
 #define STRIP_H      5
 // Tracks DICE_Y - the prompt sits directly above the box
 #ifndef PROMPT_Y
@@ -67,7 +70,9 @@ typedef char assert_game_is_header_plus_players[
 #define HINT_Y   (HEIGHT - 2)
 #endif
 
+#ifndef DIE_STEP
 #define DIE_STEP 4
+#endif
 
 // A shorter screen trades the panel's one blank row for the strip below it
 #ifndef PANEL_H
@@ -137,6 +142,18 @@ static uint8_t botShowHold;
 static bool    botShowEndsTurn;
 static bool    pendMyTurnSound;
 static int8_t  botBtn = -1;
+
+// BUTTON_CURSOR: the dice cursor boxes the buttons too, so a button lights only
+// while pressed
+#ifdef BUTTON_CURSOR
+static int8_t  pressedBtn = -1;
+#define BTN_LIT(b) (pressedBtn == (b) || botBtn == (b))
+#ifndef PRESS_FRAMES
+#define PRESS_FRAMES 10
+#endif
+#else
+#define BTN_LIT(b) ((btnLit && curSel == (b)) || botBtn == (b))
+#endif
 
 // Main loop passes. A hold plus the roll it defers outlasts the gap between
 // polls, so handleAnimation pushes the next poll back rather than let it stall
@@ -350,10 +367,8 @@ static void clearDiceArea() {
 
 static void drawButtons() {
 #if WIDTH >= 40
-  drawDie(BTN_ROLL_X, DICE_Y, DIE_ROLL, 0,
-          (btnLit && curSel == CUR_ROLL) || botBtn == CUR_ROLL);
-  drawDie(BTN_BANK_X, DICE_Y, DIE_BANK, 0,
-          (btnLit && curSel == CUR_BANK) || botBtn == CUR_BANK);
+  drawDie(BTN_ROLL_X, DICE_Y, DIE_ROLL, 0, BTN_LIT(CUR_ROLL));
+  drawDie(BTN_BANK_X, DICE_Y, DIE_BANK, 0, BTN_LIT(CUR_BANK));
 #else
   // No room for 3x3 tiles beside six dice, so vertical words instead, unframed
   // inside the strip box. Selection shows as a color change.
@@ -361,10 +376,8 @@ static void drawButtons() {
     static unsigned char bi;
 
     for (bi = 0; bi < 4; bi++) {
-      drawChar(BTN_ROLL_X, BTN_Y + bi, "roll"[bi],
-               (btnLit && curSel == CUR_ROLL) || botBtn == CUR_ROLL);
-      drawChar(BTN_BANK_X, BTN_Y + bi, "bank"[bi],
-               (btnLit && curSel == CUR_BANK) || botBtn == CUR_BANK);
+      drawChar(BTN_ROLL_X, BTN_Y + bi, "roll"[bi], BTN_LIT(CUR_ROLL));
+      drawChar(BTN_BANK_X, BTN_Y + bi, "bank"[bi], BTN_LIT(CUR_BANK));
     }
   }
 #endif
@@ -372,13 +385,15 @@ static void drawButtons() {
 
 static void showCursor() {
   btnLit = true;
-  if (curSel < NUM_DICE) {
-    drawDiceCursor(cursorX(curSel));
-    cursorShown = true;
-  } else {
+#ifndef BUTTON_CURSOR
+  if (curSel >= NUM_DICE) {
     drawButtons();
     cursorShown = false;
+    return;
   }
+#endif
+  drawDiceCursor(cursorX(curSel));
+  cursorShown = true;
 }
 
 static void hideCursor() {
@@ -1163,6 +1178,12 @@ static bool sendSelection(bool bank) {
   heldKeptReady = true;
 
   soundRollButton();
+#ifdef BUTTON_CURSOR
+  pressedBtn = curSel;
+  drawButtons();
+  pause(PRESS_FRAMES);
+  pressedBtn = -1;
+#endif
   hideCursor();
 
   // Release before the move goes out, so it is not lit for the round trip

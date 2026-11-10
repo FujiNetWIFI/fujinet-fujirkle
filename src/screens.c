@@ -57,7 +57,13 @@ void resetScreenWithBorder() {
 
 // Draws a help line and advances the row; keeps showHelpScreen's code compact.
 static unsigned char hy;
-static void helpLn(unsigned char x, char *s) { drawTextAlt(x, ++hy, s); }
+// A wider screen centers the 40-column text, clear of its wider corner dice
+#if WIDTH > 40
+#define HELP_INDENT ((WIDTH - 40) / 2)
+#else
+#define HELP_INDENT 0
+#endif
+static void helpLn(unsigned char x, char *s) { drawTextAlt(x + HELP_INDENT, ++hy, s); }
 
 /// @brief Shows information about the game
 void showHelpScreen() {

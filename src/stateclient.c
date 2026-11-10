@@ -4,6 +4,11 @@
 #include "misc.h"
 #include "fujinet-network.h"
 
+#ifdef CUSTOM_FUJINET_CALLS
+// The platform makes the calls itself (src/model2/fujinet.c)
+int16_t custom_network_call(char *url, uint8_t *buffer, uint16_t max_len);
+#endif
+
 // Internal to this file
 static char url[160];
 char *requestedMove;
@@ -29,13 +34,17 @@ uint8_t apiCall(char *path) {
   strcat(url, query );
   strcat(url, query[0] ? "&bin=1" QUERY_SUFFIX : "?bin=1" QUERY_SUFFIX);
   
+#ifdef CUSTOM_FUJINET_CALLS
+  read = custom_network_call(url, &clientState.firstByte, sizeof(clientState.game));
+#else
   if (network_open(url, OPEN_MODE_HTTP_GET, OPEN_TRANS_NONE)) {
     return API_CALL_ERROR;
   } 
   
   read = network_read(url, &clientState.firstByte, sizeof(clientState.game));
-  lastReadLen = read;
   network_close(url);
+#endif
+  lastReadLen = read;
 
   // If no bytes read, set first byte of clientState to 0, which is the number of tables or players
   if (read<=0) { 

@@ -1,4 +1,4 @@
-#if !defined(__WATCOMC__) && !defined(__ADAM__)
+#if !defined(__WATCOMC__) && !defined(__ADAM__) && !defined(__TRS80M2__)
 #include <joystick.h>
 #endif
 #include <string.h>
@@ -7,6 +7,12 @@
 #include "platform-specific/sound.h"
 #include "misc.h"
 #include "fujinet-fuji.h"
+
+#ifdef CUSTOM_FUJINET_CALLS
+// The platform makes the calls itself (src/model2/fujinet.c)
+uint16_t custom_read_appkey(uint16_t creator_id, uint8_t app_id, uint8_t key_id, char *destination);
+void custom_write_appkey(uint16_t creator_id, uint8_t app_id, uint8_t key_id, uint16_t count, char *data);
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -142,9 +148,13 @@ void savePrefs() {
 uint16_t read_appkey(uint16_t creator_id, uint8_t app_id, uint8_t key_id, char* destination) {
   uint16_t read=0;
   
+#ifdef CUSTOM_FUJINET_CALLS
+  read = custom_read_appkey(creator_id, app_id, key_id, destination);
+#else
   fuji_set_appkey_details(creator_id, app_id, DEFAULT);
   if (!fuji_read_appkey(key_id, &read, (uint8_t*)destination))
     read=0;
+#endif
 
   // Add string terminator after the data ends in case it is being interpreted as a string
   destination[read] = 0;
@@ -153,6 +163,10 @@ uint16_t read_appkey(uint16_t creator_id, uint8_t app_id, uint8_t key_id, char* 
  
 void write_appkey(uint16_t creator_id, uint8_t app_id, uint8_t key_id,  uint16_t count, char *data)
 {
+#ifdef CUSTOM_FUJINET_CALLS
+  custom_write_appkey(creator_id, app_id, key_id, count, data);
+#else
   fuji_set_appkey_details(creator_id, app_id, DEFAULT);
   fuji_write_appkey(key_id, count, (uint8_t*)data);
+#endif
 }

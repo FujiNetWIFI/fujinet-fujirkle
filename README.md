@@ -1,13 +1,14 @@
 # Fujirkle
 
-Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, Apple II, Coleco Adam, and Intellivision.
+Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX retro build system. It runs on the Tandy Color Computer, MS-DOS, Atari 8-bit, Apple II, Coleco Adam, TRS-80 Model II, and Intellivision.
 
 ## Features
 
 - Launches from the FujiNet lobby into a table, or picks one itself
 - Lobby username and last table kept in FujiNet appkeys
 - Up to four local players sharing one system
-- The same tune set on every platform, matched to the CoCo 3 reference
+- The same tune set on every platform, matched to the CoCo 3 reference; the
+  Model II has only its bell
 
 ## Supported platforms
 
@@ -19,11 +20,13 @@ Fujirkle is a FujiNet-enabled push-your-luck dice game built with the MekkoGX re
 | Atari 8-bit | 40x26 | `r2r/atari/fujirkle.atr` |
 | Apple II | 40x24 | `r2r/apple2/fujirkle.po` |
 | Coleco Adam | 32x24 | `r2r/adam/fujirkle.ddp` |
+| TRS-80 Model II | 80x24 | `r2r/model2/fujirkle.imd` |
 | Intellivision | 20x12 | `intv/fujirkle.rom` |
 
 The game board uses one of two layouts, chosen by screen width rather than by
-model. Forty columns get the split dice strip with 3x3 button tiles; 32 columns
-get a tighter strip with vertical button words.
+model. Forty or more columns get the split dice strip with button tiles (the
+Model II spreads it across 80 with 7x3 dice); 32 columns get a tighter strip
+with vertical button words.
 
 ## Requirements
 
@@ -31,7 +34,8 @@ get a tighter strip with vertical button words.
 - `cmoc` and `decb` for CoCo
 - Open Watcom (`wcc`) and `mtools` for MS-DOS
 - `cl65` (cc65) for Atari and Apple II
-- z88dk (`zcc`) for Coleco Adam
+- z88dk (`zcc`) for Coleco Adam and TRS-80 Model II
+- cpmtools and `raw2imd` for the Model II disk
 - IntyBASIC and `as1600` for Intellivision
 - `git`: the build clones and builds `fujinet-lib`
 
@@ -46,6 +50,7 @@ make msdos
 make atari
 make apple2
 make adam
+make model2
 make -C intv
 ```
 
@@ -57,7 +62,8 @@ rebuild them afterwards.
 
 Boot the generated disk image on the target system. The combined CoCo disk
 contains a loader that auto-detects the model and runs the correct binary. The
-MS-DOS image carries an `AUTOEXEC.BAT` that launches the game.
+MS-DOS image carries an `AUTOEXEC.BAT` that launches the game. On the Model II,
+run `FUJIRKLE` from the image's drive under Pickles & Trout CP/M.
 
 ## Local development
 

@@ -16,6 +16,7 @@
 #include "../atari/vars.h"
 #include "../apple2/vars.h"
 #include "../adam/vars.h"
+#include "../model2/vars.h"
 
 // The board layout switches on WIDTH. An undefined WIDTH would evaluate to 0 in
 // the #if and silently pick the narrow layout, so fail loudly instead.
