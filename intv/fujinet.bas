@@ -78,7 +78,7 @@
 ' ---------------------------------------------------------------------------
 fn_wait_mailbox: PROCEDURE
     #fn_t = 0
-    WHILE ((PEEK(FN_MAGIC0) AND 255) <> 70) AND ((PEEK(FN_MAGIC1) AND 255) <> 78) AND (#fn_t < 180)
+    WHILE (((PEEK(FN_MAGIC0) AND 255) <> 70) OR ((PEEK(FN_MAGIC1) AND 255) <> 78)) AND (#fn_t < 180)
         #fn_t = #fn_t + 1
         WAIT
     WEND

@@ -1,4 +1,4 @@
-' fujirkle.bas -- FujiNet Fujirkle (Farkle-style dice) for Intellivision,
+' fujirkle.bas -- FujiNet Fujirkle (press-your-luck dice) for Intellivision,
 ' entry point + state machine. Ported from fujinet-fujitzee/intv/fujitzee.bas
 ' (name entry -> table select -> game loop -> in-game menu), adapted for a
 ' press-your-luck dice game: no scorecard, so the 20x12 screen shows all six
@@ -70,7 +70,7 @@ lit_abin: DATA 38,98,105,110,61,49
 ' Globals
 ' ---------------------------------------------------------------------------
     DIM gs_i, gs_j, #gs_char, #gs_c
-    DIM ne_i, ne_j, ne_cur, ne_len
+    DIM ne_i, ne_j, ne_cur, ne_len, ne_k
     DIM ne_buf(8)
     DIM ak_try
     DIM #tbl_count, tbl_sel
@@ -1200,16 +1200,23 @@ ne_loop:
     WEND
     IF ne_len = 0 THEN GOTO ne_loop
 
+    ' Interior blanks (36) are dropped, not stored: 48 + 36 - 26 is ':',
+    ' which the A-Z/0-9 check rejects on the next boot.
+    ne_k = 0
     FOR ne_i = 0 TO ne_len - 1
         ne_j = ne_buf(ne_i)
-        IF ne_j < 26 THEN
-            gs_j = 65 + ne_j
-        ELSE
-            gs_j = 48 + ne_j - 26
+        IF ne_j < 36 THEN
+            IF ne_j < 26 THEN
+                gs_j = 65 + ne_j
+            ELSE
+                gs_j = 48 + ne_j - 26
+            END IF
+            POKE (SC_NAME + ne_k), gs_j
+            ne_k = ne_k + 1
         END IF
-        POKE (SC_NAME + ne_i), gs_j
     NEXT ne_i
-    POKE (SC_NAME + ne_len), 0
+    POKE (SC_NAME + ne_k), 0
+    ne_len = ne_k
 
     ak_creator_lo = 1 : ak_creator_hi = 0 : ak_app = 1 : ak_key = 0 : ak_mode = 1
     GOSUB appkey_open

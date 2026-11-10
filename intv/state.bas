@@ -20,14 +20,15 @@
 '  66   viewing (1)            1 = you are a spectator
 '  67   validMoves (1)         bitfield MOVE_ROLL=1 | MOVE_BANK=2; in
 '                              practice 0 (not your move) or 3
-'  68   turnScore (u16 LE)     points held this turn, not yet banked
-'  70   dice[7]                pool still in play, ascii '1'-'6' + NUL;
+'  68   status (1)              added by FujiNetWIFI/servers#80
+'  69   turnScore (u16 LE)     points held this turn, not yet banked
+'  71   dice[7]                pool still in play, ascii '1'-'6' + NUL;
 '                              SHRINKS as dice are set aside (6 -> 1)
-'  77   keptDice[7]            set aside so far this turn (cleared on hot dice)
-'  84   selectable[7]          same length as dice; '1' = this die can be
+'  78   keptDice[7]            set aside so far this turn (cleared on hot dice)
+'  85   selectable[7]          same length as dice; '1' = this die can be
 '                              part of some scoring combination
-'  91   keepRoll[7]            echo of the last submitted keep mask
-'  98   players[N] -- N = playerCount (can exceed 6; spectators are
+'  92   keepRoll[7]            echo of the last submitted keep mask
+'  99   players[N] -- N = playerCount (can exceed 6; spectators are
 '       appended beyond the 6 seated players), 13 bytes each:
 '         name[9] alias(1) ready(1: 1=ready, 0=not, $FE=-2 watching)
 '         score (u16 LE, live banked total)
@@ -44,12 +45,13 @@
     CONST GAME_MOVETIME     = 65
     CONST GAME_VIEWING      = 66
     CONST GAME_VALIDMOVES   = 67
-    CONST GAME_TURNSCORE    = 68    ' u16 LE
-    CONST GAME_DICE         = 70    ' 7 bytes
-    CONST GAME_KEPT         = 77    ' 7 bytes
-    CONST GAME_SELECTABLE   = 84    ' 7 bytes
-    CONST GAME_KEEPROLL     = 91    ' 7 bytes
-    CONST GAME_PLAYERS      = 98
+    CONST GAME_STATUS       = 68
+    CONST GAME_TURNSCORE    = 69    ' u16 LE
+    CONST GAME_DICE         = 71    ' 7 bytes
+    CONST GAME_KEPT         = 78    ' 7 bytes
+    CONST GAME_SELECTABLE   = 85    ' 7 bytes
+    CONST GAME_KEEPROLL     = 92    ' 7 bytes
+    CONST GAME_PLAYERS      = 99
 
 ' Scratch RAM, ours, below fujinet.bas's own SC_* buffers (which stop at
 ' SC_QUERY $9150 + 48 = $9180) and well below the $9C00 mailbox. Declared
@@ -91,7 +93,7 @@
 
     ' PLAYER_MAX matches the reference C client's misc.h (spectators can
     ' push playerCount past the 6 seated-player cap); GAME_MAXLEN sizes the
-    ' one poll buffer big enough for the worst case, 98 + 12*13 = 254 bytes,
+    ' one poll buffer big enough for the worst case, 99 + 12*13 = 255 bytes,
     ' well inside FN_RX's 704-byte window ($9D40-$9FFF).
     CONST PLAYER_MAX     = 12
     CONST GAME_MAXLEN    = GAME_PLAYERS + PLAYER_MAX * PLAYER_STRIDE
